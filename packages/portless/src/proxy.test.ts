@@ -105,7 +105,7 @@ describe("createProxyServer", () => {
 
       const res = await request(server, { host: "other.localhost" });
       expect(res.status).toBe(404);
-      expect(res.body).toContain("Active apps:");
+      expect(res.body).toContain("Active apps");
       expect(res.body).toContain("myapp.localhost");
       expect(res.body).toContain("api.localhost");
     });
@@ -151,6 +151,74 @@ describe("createProxyServer", () => {
       const res = await request(server, { host: "myapp.localhost" });
       expect(res.status).toBe(200);
       expect(res.body).toBe("hello from backend");
+    });
+
+    it("routes wildcard subdomain to matching parent route", async () => {
+      const backend = trackServer(
+        http.createServer((_req, res) => {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("wildcard hit");
+        })
+      );
+      await listen(backend);
+      const backendAddr = backend.address();
+      if (!backendAddr || typeof backendAddr === "string") throw new Error("no addr");
+
+      const routes: RouteInfo[] = [{ hostname: "myapp.localhost", port: backendAddr.port }];
+      const server = trackServer(
+        createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT })
+      );
+      await listen(server);
+
+      const res = await request(server, { host: "tenant.myapp.localhost" });
+      expect(res.status).toBe(200);
+      expect(res.body).toBe("wildcard hit");
+    });
+
+    it("prefers exact match over wildcard subdomain match", async () => {
+      const exactBackend = trackServer(
+        http.createServer((_req, res) => {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("exact");
+        })
+      );
+      await listen(exactBackend);
+      const exactAddr = exactBackend.address();
+      if (!exactAddr || typeof exactAddr === "string") throw new Error("no addr");
+
+      const wildcardBackend = trackServer(
+        http.createServer((_req, res) => {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("wildcard");
+        })
+      );
+      await listen(wildcardBackend);
+      const wildcardAddr = wildcardBackend.address();
+      if (!wildcardAddr || typeof wildcardAddr === "string") throw new Error("no addr");
+
+      const routes: RouteInfo[] = [
+        { hostname: "tenant.myapp.localhost", port: exactAddr.port },
+        { hostname: "myapp.localhost", port: wildcardAddr.port },
+      ];
+      const server = trackServer(
+        createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT })
+      );
+      await listen(server);
+
+      const res = await request(server, { host: "tenant.myapp.localhost" });
+      expect(res.status).toBe(200);
+      expect(res.body).toBe("exact");
+    });
+
+    it("returns 404 when subdomain does not match any route", async () => {
+      const routes: RouteInfo[] = [{ hostname: "myapp.localhost", port: 4001 }];
+      const server = trackServer(
+        createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT })
+      );
+      await listen(server);
+
+      const res = await request(server, { host: "other.localhost" });
+      expect(res.status).toBe(404);
     });
 
     it("strips port from Host header for matching", async () => {
@@ -526,6 +594,94 @@ describe("createProxyServer", () => {
 
       expect(res.status).toBe(508);
       expect(res.body).toContain("Loop Detected");
+    });
+  });
+
+  describe("custom TLD", () => {
+    it("uses custom TLD in 404 page suggested command", async () => {
+      const routes: RouteInfo[] = [];
+      const server = trackServer(
+        createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT, tld: "test" })
+      );
+      await listen(server);
+
+      const res = await request(server, { host: "unknown.test" });
+      expect(res.status).toBe(404);
+      expect(res.body).toContain("unknown.test");
+      expect(res.body).toContain("portless unknown your-command");
+    });
+
+    it("uses custom TLD in 508 loop detection page", async () => {
+      const backend = trackServer(
+        http.createServer((_req, res) => {
+          res.writeHead(200);
+          res.end("ok");
+        })
+      );
+      await listen(backend);
+      const backendAddr = backend.address();
+      if (!backendAddr || typeof backendAddr === "string") throw new Error("no addr");
+
+      const routes: RouteInfo[] = [{ hostname: "app.test", port: backendAddr.port }];
+      const server = trackServer(
+        createProxyServer({
+          getRoutes: () => routes,
+          proxyPort: TEST_PROXY_PORT,
+          tld: "test",
+          onError: () => {},
+        })
+      );
+      await listen(server);
+
+      const addr = server.address();
+      if (!addr || typeof addr === "string") throw new Error("no addr");
+
+      const res = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+        const req = http.request(
+          {
+            hostname: "127.0.0.1",
+            port: addr.port,
+            path: "/",
+            method: "GET",
+            headers: {
+              host: "app.test",
+              "x-portless-hops": "5",
+            },
+          },
+          (res) => {
+            let body = "";
+            res.on("data", (chunk) => (body += chunk));
+            res.on("end", () => resolve({ status: res.statusCode!, body }));
+          }
+        );
+        req.on("error", reject);
+        req.end();
+      });
+
+      expect(res.status).toBe(508);
+      expect(res.body).toContain(".test");
+    });
+
+    it("routes requests with custom TLD hostnames", async () => {
+      const backend = trackServer(
+        http.createServer((_req, res) => {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("custom tld hit");
+        })
+      );
+      await listen(backend);
+      const backendAddr = backend.address();
+      if (!backendAddr || typeof backendAddr === "string") throw new Error("no addr");
+
+      const routes: RouteInfo[] = [{ hostname: "myapp.test", port: backendAddr.port }];
+      const server = trackServer(
+        createProxyServer({ getRoutes: () => routes, proxyPort: TEST_PROXY_PORT, tld: "test" })
+      );
+      await listen(server);
+
+      const res = await request(server, { host: "myapp.test" });
+      expect(res.status).toBe(200);
+      expect(res.body).toBe("custom tld hit");
     });
   });
 

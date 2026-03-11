@@ -3,6 +3,7 @@ import * as http2 from "node:http2";
 import * as net from "node:net";
 import type { ProxyServerOptions } from "./types.js";
 import { escapeHtml, formatUrl } from "./utils.js";
+import { ARROW_SVG, renderPage } from "./pages.js";
 
 /** Response header used to identify a portless proxy (for health checks). */
 export const PORTLESS_HEADER = "X-Portless";
@@ -67,6 +68,20 @@ const PORTLESS_HOPS_HEADER = "x-portless-hops";
  */
 const MAX_PROXY_HOPS = 5;
 
+/**
+ * Find the route matching a given host. Matches exact hostname first, then
+ * falls back to wildcard subdomain matching (e.g. tenant.myapp.localhost
+ * matches a route registered for myapp.localhost).
+ */
+function findRoute(
+  routes: { hostname: string; port: number }[],
+  host: string
+): { hostname: string; port: number } | undefined {
+  return (
+    routes.find((r) => r.hostname === host) || routes.find((r) => host.endsWith("." + r.hostname))
+  );
+}
+
 /** Server type returned by createProxyServer (plain HTTP/1.1 or net.Server TLS wrapper). */
 export type ProxyServer = http.Server | net.Server;
 
@@ -82,7 +97,14 @@ export type ProxyServer = http.Server | net.Server;
  * browsers while keeping WebSocket upgrades working over HTTP/1.1.
  */
 export function createProxyServer(options: ProxyServerOptions): ProxyServer {
-  const { getRoutes, proxyPort, onError = (msg: string) => console.error(msg), tls } = options;
+  const {
+    getRoutes,
+    proxyPort,
+    tld = "localhost",
+    onError = (msg: string) => console.error(msg),
+    tls,
+  } = options;
+  const tldSuffix = `.${tld}`;
 
   const isTls = !!tls;
 
@@ -105,47 +127,40 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
           `This usually means a backend is proxying back through portless without rewriting ` +
           `the Host header. If you use Vite/webpack proxy, set changeOrigin: true.`
       );
-      res.writeHead(508, { "Content-Type": "text/plain" });
+      res.writeHead(508, { "Content-Type": "text/html" });
       res.end(
-        `Loop Detected: this request has passed through portless ${hops} times.\n\n` +
-          "This usually means a dev server (Vite, webpack, etc.) is proxying\n" +
-          "requests back through portless without rewriting the Host header.\n\n" +
-          "Fix: add changeOrigin: true to your proxy config, e.g.:\n\n" +
-          "  proxy: {\n" +
-          '    "/api": {\n' +
-          '      target: "http://<backend>.localhost:<port>",\n' +
-          "      changeOrigin: true,\n" +
-          "    },\n" +
-          "  }\n"
+        renderPage(
+          508,
+          "Loop Detected",
+          `<div class="content"><p class="desc">This request has passed through portless ${hops} times. This usually means a dev server (Vite, webpack, etc.) is proxying requests back through portless without rewriting the Host header.</p><div class="section"><p class="label">Fix: add changeOrigin to your proxy config</p><pre class="terminal">proxy: {
+  "/api": {
+    target: "http://&lt;backend&gt;${escapeHtml(tldSuffix)}:&lt;port&gt;",
+    changeOrigin: true,
+  },
+}</pre></div></div>`
+        )
       );
       return;
     }
 
-    const route = routes.find((r) => r.hostname === host);
+    const route = findRoute(routes, host);
 
     if (!route) {
       const safeHost = escapeHtml(host);
+      const strippedHost = host.endsWith(tldSuffix) ? host.slice(0, -tldSuffix.length) : host;
+      const safeSuggestion = escapeHtml(strippedHost);
+      const routesList =
+        routes.length > 0
+          ? `<div class="section"><p class="label">Active apps</p><ul class="card">${routes.map((r) => `<li><a href="${escapeHtml(formatUrl(r.hostname, proxyPort, isTls))}" class="card-link"><span class="name">${escapeHtml(r.hostname)}</span><span class="meta"><code class="port">127.0.0.1:${escapeHtml(String(r.port))}</code><span class="arrow">${ARROW_SVG}</span></span></a></li>`).join("")}</ul></div>`
+          : '<p class="empty">No apps running.</p>';
       res.writeHead(404, { "Content-Type": "text/html" });
-      res.end(`
-        <html>
-          <head><title>portless - Not Found</title></head>
-          <body style="font-family: system-ui; padding: 40px; max-width: 600px; margin: 0 auto;">
-            <h1>Not Found</h1>
-            <p>No app registered for <strong>${safeHost}</strong></p>
-            ${
-              routes.length > 0
-                ? `
-              <h2>Active apps:</h2>
-              <ul>
-                ${routes.map((r) => `<li><a href="${escapeHtml(formatUrl(r.hostname, proxyPort, isTls))}">${escapeHtml(r.hostname)}</a> - localhost:${escapeHtml(String(r.port))}</li>`).join("")}
-              </ul>
-            `
-                : "<p><em>No apps running.</em></p>"
-            }
-            <p>Start an app with: <code>portless ${safeHost.replace(".localhost", "")} your-command</code></p>
-          </body>
-        </html>
-      `);
+      res.end(
+        renderPage(
+          404,
+          "Not Found",
+          `<div class="content"><p class="desc">No app registered for <strong>${safeHost}</strong></p>${routesList}<div class="section"><div class="terminal"><span class="prompt">$ </span>portless ${safeSuggestion} your-command</div></div></div>`
+        )
+      );
       return;
     }
 
@@ -178,6 +193,12 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
           }
         }
         res.writeHead(proxyRes.statusCode || 502, responseHeaders);
+        proxyRes.on("error", () => {
+          if (!res.headersSent) {
+            res.writeHead(502, { "Content-Type": "text/plain" });
+          }
+          res.end();
+        });
         proxyRes.pipe(res);
       }
     );
@@ -186,12 +207,18 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
       onError(`Proxy error for ${getRequestHost(req)}: ${err.message}`);
       if (!res.headersSent) {
         const errWithCode = err as NodeJS.ErrnoException;
-        const message =
+        const detail =
           errWithCode.code === "ECONNREFUSED"
-            ? "Bad Gateway: the target app is not responding. It may have crashed."
-            : "Bad Gateway: the target app may not be running.";
-        res.writeHead(502, { "Content-Type": "text/plain" });
-        res.end(message);
+            ? "The target app is not responding. It may have crashed."
+            : "The target app may not be running.";
+        res.writeHead(502, { "Content-Type": "text/html" });
+        res.end(
+          renderPage(
+            502,
+            "Bad Gateway",
+            `<div class="content"><p class="desc">${escapeHtml(detail)}</p></div>`
+          )
+        );
       }
     });
 
@@ -212,6 +239,8 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
   };
 
   const handleUpgrade = (req: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
+    socket.on("error", () => socket.destroy());
+
     const hops = parseInt(req.headers[PORTLESS_HOPS_HEADER] as string, 10) || 0;
     if (hops >= MAX_PROXY_HOPS) {
       const host = getRequestHost(req).split(":")[0];
@@ -231,7 +260,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
 
     const routes = getRoutes();
     const host = getRequestHost(req).split(":")[0];
-    const route = routes.find((r) => r.hostname === host);
+    const route = findRoute(routes, host);
 
     if (!route) {
       socket.destroy();
@@ -294,6 +323,7 @@ export function createProxyServer(options: ProxyServerOptions): ProxyServer {
         }
         response += "\r\n";
         socket.write(response);
+        res.on("error", () => socket.destroy());
         res.pipe(socket);
       }
     });

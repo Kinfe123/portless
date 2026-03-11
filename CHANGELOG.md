@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.6.0
+
+### Features
+
+- **custom TLD**: Use `--tld` to set a custom TLD (e.g. `.test`) instead of `.localhost`. Configurable via `PORTLESS_TLD` env var. The proxy auto-syncs `/etc/hosts` for custom TLDs when started with sudo. Warns about risky TLDs like `.local` (mDNS/Bonjour conflicts) and `.dev` (Google-owned, HSTS). Recommended: `.test` (IANA-reserved, no collision risk). (#93)
+- **`portless get` command**: Print the URL for a service, useful for wiring services together (e.g. `BACKEND_URL=$(portless get backend)`). Applies worktree prefix detection by default; use `--no-worktree` to skip it. (#88)
+- **`--name` flag for `portless run`**: Override the inferred base name while preserving the worktree prefix (e.g. `portless run --name myapp next dev` in a worktree produces `fix-ui.myapp.localhost`). (#89)
+
+### Bug Fixes
+
+- **HTTPS proxy trust and stop on macOS with sudo**: Fix CA trust check and `proxy stop` when the proxy was started with sudo on macOS. (#98)
+- **DNS label length for worktree hostnames**: Truncate worktree-prefixed hostnames to respect the 63-character DNS label limit. (#87)
+
+## 0.5.2
+
+### Documentation
+
+- Add git worktree documentation to README, docs site, and agent skill. `portless run` automatically detects linked worktrees and prefixes the URL with the branch name (e.g. `fix-ui.myapp.localhost`).
+- Document worktree support in 0.5.0 changelog entry.
+
+## 0.5.1
+
+### Bug Fixes
+
+- **npm README**: Copy root `README.md` into the package at publish time so it appears on npmjs.com.
+- **homepage**: Point npm homepage to https://port1355.dev.
+
+## 0.5.0
+
+### Features
+
+- **`portless run` subcommand**: Automatically infer the project name from `package.json`, git root, or directory name instead of specifying it manually. In git worktrees, the branch name is prepended as a subdomain prefix (e.g. `fix-ui.myapp.localhost`) so each worktree gets a unique URL with no config changes. (#55, #68)
+- **`portless alias` command**: Register routes for services not spawned by portless (e.g. Docker containers with published ports). Aliases persist across stale-route cleanup. (#73)
+- **`PORTLESS_URL` env var**: Child processes now receive `PORTLESS_URL` containing the public `.localhost` URL (e.g. `http://myapp.localhost:1355`) so apps can self-reference their own URL. (#56)
+- **`--app-port` flag**: Specify a fixed port for the app instead of automatic assignment. Also configurable via `PORTLESS_APP_PORT` env var. Useful when integrating with tools that provide their own port. (#72)
+- **wildcard subdomain routing**: Subdomains now match registered hostnames (e.g. `tenant.myapp.localhost` matches `myapp.localhost`). Exact matches take priority over wildcard matches. (#71)
+- **`/etc/hosts` sync**: Automatically sync `.localhost` hostnames to `/etc/hosts` for environments where `.localhost` does not resolve to `127.0.0.1` by default. (#74)
+- **multi-distro Linux CA trust**: `portless trust` now supports Arch, Fedora/RHEL/CentOS, and openSUSE in addition to Debian/Ubuntu. Falls back to command probing when `/etc/os-release` detection fails. (#45)
+- **Expo and React Native support**: Auto-inject `--port` and `--host` flags for `expo start` and `react-native start`. (#42)
+- **branded error and status pages**: The proxy now renders styled HTML pages for 404, 502, 508, and other status codes instead of plain text. (#70)
+
+### Bug Fixes
+
+- **stream errors**: Handle proxy stream errors gracefully to prevent unhandled exceptions from crashing the proxy. (#57)
+
 ## 0.4.2
 
 ### Bug Fixes

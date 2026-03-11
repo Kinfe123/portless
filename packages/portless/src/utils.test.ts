@@ -141,4 +141,57 @@ describe("parseHostname", () => {
   it("handles protocol with .localhost already present", () => {
     expect(parseHostname("https://test.localhost")).toBe("test.localhost");
   });
+
+  it("throws on label exceeding 63 characters", () => {
+    const longLabel = "a".repeat(64);
+    expect(() => parseHostname(longLabel)).toThrow("exceeds 63-character DNS limit");
+  });
+
+  it("accepts label at exactly 63 characters", () => {
+    const label63 = "a".repeat(63);
+    expect(parseHostname(label63)).toBe(`${label63}.localhost`);
+  });
+
+  it("throws when any label in multi-part hostname exceeds 63 characters", () => {
+    const longLabel = "a".repeat(64);
+    expect(() => parseHostname(`prefix.${longLabel}`)).toThrow("exceeds 63-character DNS limit");
+  });
+
+  describe("custom TLD", () => {
+    it("appends custom TLD suffix", () => {
+      expect(parseHostname("myapp", "test")).toBe("myapp.test");
+    });
+
+    it("preserves existing custom TLD suffix", () => {
+      expect(parseHostname("myapp.test", "test")).toBe("myapp.test");
+    });
+
+    it("strips .localhost suffix when using a different TLD", () => {
+      expect(parseHostname("myapp.localhost", "test")).toBe("myapp.test");
+    });
+
+    it("strips .localhost subdomain suffix when using a different TLD", () => {
+      expect(parseHostname("api.myapp.localhost", "test")).toBe("api.myapp.test");
+    });
+
+    it("handles subdomain with custom TLD", () => {
+      expect(parseHostname("api.myapp", "test")).toBe("api.myapp.test");
+    });
+
+    it("throws on empty input with custom TLD", () => {
+      expect(() => parseHostname("", "test")).toThrow("Hostname cannot be empty");
+    });
+
+    it("throws on bare TLD suffix", () => {
+      expect(() => parseHostname(".test", "test")).toThrow("Hostname cannot be empty");
+    });
+
+    it("validates characters with custom TLD", () => {
+      expect(() => parseHostname("my app", "test")).toThrow("Invalid hostname");
+    });
+
+    it("works with dev TLD", () => {
+      expect(parseHostname("myapp", "dev")).toBe("myapp.dev");
+    });
+  });
 });
