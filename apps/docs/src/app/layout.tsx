@@ -8,6 +8,7 @@ import { DocsMobileNav } from "@/components/docs-mobile-nav";
 import { DocsNav } from "@/components/docs-nav";
 import { cookies } from "next/headers";
 import "./globals.css";
+import { RootProvider } from "@farming-labs/theme";
 
 export const metadata: Metadata = {
   title: "portless",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm dark:bg-neutral-950/90">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-white/10 dark:bg-neutral-950/90">
       <div className="flex h-14 items-center justify-between px-4 gap-6">
         <div className="flex items-center gap-2">
           <Link href="https://vercel.com" title="Made with love by Vercel">
@@ -100,11 +101,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
         )}
       </head>
-      <body className="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+      <body className="bg-white w-full text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         <ThemeProvider>
           <Header />
-          <DocsMobileNav />
-          <DocsNav>{children}</DocsNav>
+          {/* <DocsMobileNav /> */}
+          <RootProvider>{children}</RootProvider>
           <DocsChat defaultOpen={chatOpen} defaultWidth={chatWidth} />
         </ThemeProvider>
       </body>

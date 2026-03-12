@@ -1,4 +1,5 @@
 import createMDX from "@next/mdx";
+import { withDocs } from "@farming-labs/next/config";
 
 const withMDX = createMDX();
 
@@ -8,4 +9,4 @@ const nextConfig = {
   serverExternalPackages: ["just-bash", "bash-tool"],
 };
 
-export default withMDX(nextConfig);
+export default withDocs(withMDX(nextConfig));

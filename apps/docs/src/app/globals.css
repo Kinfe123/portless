@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@farming-labs/theme/colorful/css";
 @plugin "tailwindcss-animate";
 
 @source "../../node_modules/streamdown/dist/**/*.js";
@@ -216,4 +217,11 @@ article td {
 
 button {
   cursor: pointer;
+}
+
+:is(.\*\:w-\(--fd-sidebar-width\) > *) {
+  background: transparent;
+}
+.dark #nd-sidebar {
+  background: transparent;
 }
