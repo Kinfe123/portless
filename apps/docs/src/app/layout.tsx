@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-white/10 dark:bg-neutral-950/90">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b dark:border-white/10 border-black/10 dark:bg-neutral-950/90">
       <div className="flex h-14 items-center justify-between px-4 gap-6">
         <div className="flex items-center gap-2">
           <Link href="https://vercel.com" title="Made with love by Vercel">

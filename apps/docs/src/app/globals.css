@@ -222,6 +222,11 @@ button {
 :is(.\*\:w-\(--fd-sidebar-width\) > *) {
   background: transparent;
 }
-.dark #nd-sidebar {
+#nd-sidebar {
   background: transparent;
+  height: 94vh !important;
+  overflow-y: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
