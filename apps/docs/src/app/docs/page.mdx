@@ -13,7 +13,7 @@ icon: "book"
 
 ## Install
 
-```bash
+```bash title="terminal"
 npm install -g portless
 ```
 
@@ -21,7 +21,7 @@ npm install -g portless
 
 ## Run your app
 
-```bash
+```bash title="terminal"
 # Enable HTTPS (one-time setup, auto-generates certs)
 portless proxy start --https
 
@@ -49,7 +49,7 @@ The proxy auto-starts when you run an app. A random port (4000--4999) is assigne
 
 Organize services with subdomains:
 
-```bash
+```bash title="terminal"
 portless api.myapp pnpm start
 # -> http://api.myapp.localhost:1355
 
@@ -61,7 +61,7 @@ portless docs.myapp next dev
 
 `portless run` automatically detects git worktrees. In a linked worktree, the branch name is prepended as a subdomain so each worktree gets its own URL without any config changes:
 
-```bash
+```bash title="terminal"
 # Main worktree -- no prefix
 portless run next dev   # -> http://myapp.localhost:1355
 
@@ -73,7 +73,7 @@ Put `portless run` in your `package.json` once and it works everywhere -- the ma
 
 Use `--name` to override the inferred base name while keeping the worktree prefix:
 
-```bash
+```bash title="terminal"
 portless run --name myapp next dev   # -> http://fix-ui.myapp.localhost:1355
 ```
 
@@ -81,7 +81,7 @@ portless run --name myapp next dev   # -> http://fix-ui.myapp.localhost:1355
 
 By default, portless uses `.localhost` which auto-resolves to `127.0.0.1` in most browsers. If you prefer a different TLD (e.g. `.test`), use `--tld`:
 
-```bash
+```bash title="terminal"
 sudo portless proxy start --https --tld test
 portless myapp next dev
 # -> https://myapp.test

@@ -9,7 +9,7 @@ order: 3
 
 ## Enable HTTPS
 
-```bash
+```bash title="terminal"
 portless proxy start --https
 ```
 
@@ -19,7 +19,7 @@ First run generates a local CA and server certs, then prompts for sudo once to t
 
 Add to `.bashrc` or `.zshrc`:
 
-```bash
+```bash title="terminal"
 export PORTLESS_HTTPS=1
 ```
 
@@ -29,7 +29,7 @@ Now `portless proxy start` uses HTTPS by default.
 
 Use your own certs (e.g., from mkcert):
 
-```bash
+```bash title="terminal"
 portless proxy start --cert ./cert.pem --key ./key.pem
 ```
 
@@ -39,7 +39,7 @@ Both flags imply `--https`.
 
 If you skipped the sudo prompt on first run:
 
-```bash
+```bash title="terminal"
 sudo portless trust
 ```
 
@@ -47,6 +47,6 @@ sudo portless trust
 
 Override the environment variable:
 
-```bash
+```bash title="terminal"
 portless proxy start --no-tls
 ```

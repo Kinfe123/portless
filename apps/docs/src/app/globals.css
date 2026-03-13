@@ -224,10 +224,26 @@ button {
 }
 #nd-sidebar {
   background: transparent;
-  height: 94vh !important;
-  backdrop-filter: 10;
-  /* overflow-y: hidden;
-  position: fixed;
-  top: 0;
-  left: 0; */
+}
+
+@media (min-width: 1024px) {
+  #nd-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh !important;
+    padding-top: 3.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  #nd-sidebar > * {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+.dark .shiki, .dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--color-fd-card) !important;
 }
