@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 const nav = [
-  { href: "/", label: "Getting Started" },
-  { href: "/why", label: "Why Portless" },
-  { href: "/commands", label: "Commands" },
-  { href: "/https", label: "HTTPS" },
-  { href: "/configuration", label: "Configuration" },
-  { href: "/changelog", label: "Changelog" },
+  { href: "/docs", label: "Getting Started" },
+  { href: "/docs/why", label: "Why Portless" },
+  { href: "/docs/commands", label: "Commands" },
+  { href: "/docs/https", label: "HTTPS" },
+  { href: "/docs/configuration", label: "Configuration" },
+  { href: "/docs/changelog", label: "Changelog" },
 ];
 
 export function DocsMobileNav() {
@@ -19,7 +19,7 @@ export function DocsMobileNav() {
   const pathname = usePathname();
 
   const currentPage = useMemo(() => {
-    return nav.find((page) => page.href === pathname) ?? nav[0];
+    return nav.find((page) => pathname === page.href || (page.href !== "/docs" && pathname.startsWith(page.href + "/"))) ?? nav[0];
   }, [pathname]);
 
   return (

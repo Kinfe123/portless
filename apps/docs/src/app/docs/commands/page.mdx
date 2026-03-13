@@ -1,8 +1,15 @@
+---
+title: "Commands"
+description: "portless CLI command reference"
+icon: "terminal"
+order: 2
+---
+
 # Commands
 
 ## Run an app
 
-```bash
+```bash title="terminal"
 portless run [--name <name>] <cmd> [args...]
 portless <name> <cmd> [args...]
 ```
@@ -11,7 +18,7 @@ portless <name> <cmd> [args...]
 
 `portless <name>` uses an explicit name with no inference or prefixing.
 
-```bash
+```bash title="terminal"
 portless run next dev                    # infer name from project
 portless run --name myapp next dev       # override inferred name
 portless myapp next dev                  # explicit name
@@ -44,13 +51,13 @@ portless docs.myapp next dev
 
 ## Get a service URL
 
-```bash
+```bash title="terminal"
 portless get <name>
 ```
 
 Print the URL for a service. Useful for wiring services together in scripts or env vars:
 
-```bash
+```bash title="terminal"
 BACKEND_URL=$(portless get backend)
 ```
 
@@ -58,7 +65,7 @@ Applies worktree prefix detection by default. Use `--no-worktree` to skip it.
 
 ## Alias (static routes)
 
-```bash
+```bash title="terminal"
 portless alias <name> <port>
 portless alias <name> <port> --force
 portless alias --remove <name>
@@ -66,7 +73,7 @@ portless alias --remove <name>
 
 Register a route for a service not managed by portless (e.g. a Docker container). Aliases persist across stale-route cleanup.
 
-```bash
+```bash title="terminal"
 portless alias my-postgres 5432     # -> http://my-postgres.localhost:1355
 portless alias redis 6379           # -> http://redis.localhost:1355
 portless alias --remove my-postgres # remove the alias
@@ -74,7 +81,7 @@ portless alias --remove my-postgres # remove the alias
 
 ## List routes
 
-```bash
+```bash title="terminal"
 portless list
 ```
 
@@ -82,7 +89,7 @@ Shows active routes and their assigned ports.
 
 ## Trust the CA
 
-```bash
+```bash title="terminal"
 sudo portless trust
 ```
 
@@ -92,7 +99,7 @@ Adds the portless certificate authority to your system trust store. Required onc
 
 ### Start
 
-```bash
+```bash title="terminal"
 portless proxy start
 ```
 
@@ -137,13 +144,13 @@ portless proxy start
 
 ### Stop
 
-```bash
+```bash title="terminal"
 portless proxy stop
 ```
 
 ## Hosts
 
-```bash
+```bash title="terminal"
 sudo portless hosts sync     # add current routes to /etc/hosts
 sudo portless hosts clean    # remove portless entries from /etc/hosts
 ```
@@ -152,7 +159,7 @@ Auto-enabled for custom TLDs. For `.localhost`, set `PORTLESS_SYNC_HOSTS=1` to e
 
 ## Bypass portless
 
-```bash
+```bash title="terminal"
 PORTLESS=0 pnpm dev
 ```
 
@@ -160,7 +167,7 @@ Runs the command directly without the proxy.
 
 ## Info
 
-```bash
+```bash title="terminal"
 portless --help
 portless --version
 ```

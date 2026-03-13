@@ -4,12 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "portless portless next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.96",
+    "@farming-labs/docs": "^0.0.25",
+    "@farming-labs/next": "^0.0.25",
+    "@farming-labs/theme": "^0.0.25",
     "@mdx-js/loader": "^3",
     "@mdx-js/react": "^3",
     "@next/mdx": "^16.1.6",
@@ -36,6 +39,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "postcss": "^8.5.8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
