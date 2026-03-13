@@ -21,4 +21,5 @@ export default defineDocs({
     titleTemplate: "%s – @portless/docs",
     description: "Documentation for @portless/docs",
   },
+  themeToggle: { enabled: false, default: "dark" },
 });
