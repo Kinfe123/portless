@@ -1,8 +1,11 @@
 import { defineDocs } from "@farming-labs/docs";
 // import { pixelBorder } from "@farming-labs/theme/pixel-border";
 import { colorful } from "@farming-labs/theme/colorful";
+import { docsIcons } from "@/lib/docs-icons";
 export default defineDocs({
   entry: "docs",
+  ordering: "numeric",
+  icons: docsIcons,
   theme: colorful({
     ui: {
       layout: {

@@ -54,7 +54,7 @@ function Header() {
               />
             </svg>
           </span>
-          <Link href="/">
+          <Link href="/docs">
             <span className={`${GeistPixelSquare.className} text-lg`}>portless</span>
           </Link>
         </div>

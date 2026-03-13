@@ -225,8 +225,9 @@ button {
 #nd-sidebar {
   background: transparent;
   height: 94vh !important;
-  overflow-y: hidden;
-  position: absolute;
+  backdrop-filter: 10;
+  /* overflow-y: hidden;
+  position: fixed;
   top: 0;
-  left: 0;
+  left: 0; */
 }
