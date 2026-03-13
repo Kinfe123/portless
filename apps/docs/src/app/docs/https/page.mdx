@@ -7,6 +7,8 @@ order: 3
 
 # HTTPS
 
+HTTP/2 + TLS for faster dev server page loads. Browsers limit HTTP/1.1 to 6 connections per host, which bottlenecks dev servers serving many unbundled files. HTTP/2 multiplexes all requests over a single connection.
+
 ## Enable HTTPS
 
 ```bash title="terminal"
